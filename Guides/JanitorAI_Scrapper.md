@@ -30,6 +30,7 @@
 3. Click on the upper right corner where it is written "Using Janitor" or "Using ...".
 4. Select "proxy" among the options.
 5. Select custom in model and keep other settings like this.
+
     ![image](../Images/janitor-proxy.png)
 6. In the url box, paste the trycloudflare url that you copied before and add this in the end `/v1/chat/completions`
 7. Add `mock-model-1` in model name and `custom-key` in API key field box.
@@ -41,6 +42,7 @@
 
 1. After sending, come to your terminal where the node js server is running.
 2. You will see something like this:
+
     ![image](../Images/janitor-output.png)
 3. You will find two XML tags wrapped section, one with your persona name and another with character card name.
 4. The details between the tags like in my case `<Seirra>` and `</Seirra>` is the information of the character card.
