@@ -15,6 +15,7 @@
 2. Run this command by opening other terminal window.
     `cloudflared tunnel --url http://localhost:3000`
 3. Wait for few seconds and you will get a url something like this.
+
     ![image](../Images/trycloudflare.png)
 4. Copy the url that is ending with "trycloudflare.com".
 
