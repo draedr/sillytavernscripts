@@ -49,4 +49,4 @@
 5. Just copy the details from there and paste inside SillyTavern.
 6. Close both the terminals after you are done.
 
-**Voila! This way you can copy any proxy enable character card form janitor ai. Have Fun! 😉**
+**Voila! This way you can copy any proxy enabled character card from janitor ai. Have Fun! 😉**
