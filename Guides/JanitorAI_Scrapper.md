@@ -7,7 +7,7 @@
     - If you are on windows, right click an empty space and open terminal in the folder.
     - If you are on linux/mac, open terminal to that folder.
 3. Run `npm i` in the terminal. "This is one time step only."
-4. Then, run `API_KEY=custom-key nodemon server.js`. It will start the node js server.
+4. Then, run `node server.js`. It will start the node js server.
 
 ## 2. Setting up cloudflare.
 
