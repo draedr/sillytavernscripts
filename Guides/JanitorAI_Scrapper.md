@@ -1,4 +1,4 @@
-# Guide on how to scrap janitor AIs hidden defininition character cards details
+# Guide on how to scrap janitor AIs hidden definition character cards details
 
 ## 1. Setting up server.
 
