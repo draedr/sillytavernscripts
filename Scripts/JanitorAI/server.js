@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs').promises;
+const path = require('path');
+const util = require('util');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -10,6 +12,9 @@ const port = process.env.PORT || 3000;
 const VALID_API_KEYS = new Set([
   process.env.API_KEY || 'custom-key'
 ]);
+
+// Keep track of character names we've seen
+const loggedCharacters = new Set();
 
 // Middleware to check API key
 const apiKeyAuth = (req, res, next) => {
@@ -26,18 +31,92 @@ const apiKeyAuth = (req, res, next) => {
   next();
 };
 
-async function logRequest(body) {
+// Function to extract character name from messages
+function extractCharacterName(messages) {
+  // Look through all messages
+  for (const message of messages) {
+    if (message.content) {
+      // First, remove system tags to avoid matching them
+      const contentWithoutSystem = message.content.replace(/<system>.*?<\/system>/gs, '');
+      
+      // Try to find character tags like <Scarlett>
+      const characterTagMatch = contentWithoutSystem.match(/<([A-Za-z][^>\s]+)[\s>]/);
+      if (characterTagMatch && characterTagMatch[1]) {
+        // Exclude common non-character tags
+        const name = characterTagMatch[1];
+        if (!['system', 'scenario', 'roleplay_guidlines', '/'].includes(name.toLowerCase())) {
+          return name;
+        }
+      }
+      
+      // Look for Name: pattern as a fallback
+      const nameColon = contentWithoutSystem.match(/Name:\s*([^,\n]+)/i);
+      if (nameColon && nameColon[1]) {
+        return nameColon[1].trim();
+      }
+    }
+  }
+  
+  // Default if no name found
+  return "unknown";
+}
+
+async function logRequest(body, characterName = "unknown") {
   try {
-    // Convert the object to JSON string
-    let log = JSON.stringify(body, null, 2) + '\n\n --------------------------------------------------------------------------------- \n\n\n';
-    log = log.substring(1, log.length-1)
-    log = log.replaceAll("\\n","\n")
-    log = log.replaceAll("\\","")
+    // Format timestamp
+    const timestamp = new Date().toISOString();
     
-    // Append to file with proper formatting
-    await fs.appendFile('requests.log', `Logs of "${Date()}": \n\n` + log);
+    // Create a readable log entry
+    const logEntry = `==== Request at ${timestamp} ====\n\n${
+      typeof body === 'string' 
+        ? body 
+        : JSON.stringify(body, null, 2)
+    }\n\n${'='.repeat(50)}\n\n`;
+    
+    // Create a sanitized version of the character name for the filename
+    // Remove any characters that might cause issues in filenames
+    const safeCharName = characterName.toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_');
+    
+    // Create filename based on character name
+    const filename = `request_${safeCharName}.log`;
+    
+    // Check if we've seen this character before
+    const isNewCharacter = !loggedCharacters.has(safeCharName);
+    
+    // Add to our set of logged characters
+    loggedCharacters.add(safeCharName);
+    
+    // Check if file exists
+    let fileExists = false;
+    try {
+      await fs.access(filename);
+      fileExists = true;
+    } catch {
+      fileExists = false;
+    }
+    
+    // Create header for new file
+    let fileContent = '';
+    if (isNewCharacter || !fileExists) {
+      fileContent = `===== LOG FILE FOR CHARACTER: ${characterName} =====\nCreated: ${timestamp}\n\n${logEntry}`;
+    } else {
+      fileContent = logEntry;
+    }
+    
+    // Write the content (append or create new)
+    if (fileExists) {
+      await fs.appendFile(filename, fileContent);
+    } else {
+      await fs.writeFile(filename, fileContent);
+      console.log(`Created new log file for character: ${characterName}`);
+    }
+    
+    return { filename, isNewCharacter };
   } catch (error) {
     console.error('Failed to log request:', error);
+    return { filename: 'error-log.log', isNewCharacter: false };
   }
 }
 
@@ -58,7 +137,7 @@ app.get('/v1/models', apiKeyAuth, (req, res) => {
 });
 
 // Mock chat completion endpoint
-app.post('/v1/chat/completions', apiKeyAuth, (req, res) => {
+app.post('/v1/chat/completions', apiKeyAuth, async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
@@ -69,6 +148,9 @@ app.post('/v1/chat/completions', apiKeyAuth, (req, res) => {
       }
     });
   }
+
+  // Extract character name from messages
+  const characterName = extractCharacterName(messages);
 
   // Generate mock response
   const mockResponse = {
@@ -91,9 +173,19 @@ app.post('/v1/chat/completions', apiKeyAuth, (req, res) => {
     }
   };
 
-  console.log(req.body);
-  logRequest(req.body.messages[0].content);
-  console.log("Logs can be found in 'requests.log' file")
+  // Log request with proper formatting using util.inspect
+  console.log(util.inspect(req.body, { depth: null, colors: true, maxArrayLength: null }));
+  
+  // Log to file with character name
+  const { filename, isNewCharacter } = await logRequest(req.body.messages, characterName);
+  
+  // Enhanced console message
+  if (isNewCharacter) {
+    console.log(`New character detected: ${characterName} - Logs saved to '${filename}'`);
+  } else {
+    console.log(`Logs for ${characterName} appended to '${filename}'`);
+  }
+  
   res.json(mockResponse);
 });
 
@@ -111,4 +203,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Mock OpenAI server running on port ${port}`);
   console.log(`Valid API keys: ${Array.from(VALID_API_KEYS).join(', ')}`);
+  console.log(`Log files will be created as: request_[character_name].log`);
 });
