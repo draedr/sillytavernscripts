@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fs = require('fs').promises;
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,7 +14,7 @@ const VALID_API_KEYS = new Set([
 // Middleware to check API key
 const apiKeyAuth = (req, res, next) => {
   const apiKey = req.headers.authorization?.replace('Bearer ', '');
-  
+
   if (!apiKey || !VALID_API_KEYS.has(apiKey)) {
     return res.status(401).json({
       error: {
@@ -24,6 +25,21 @@ const apiKeyAuth = (req, res, next) => {
   }
   next();
 };
+
+async function logRequest(body) {
+  try {
+    // Convert the object to JSON string
+    let log = JSON.stringify(body, null, 2) + '\n\n --------------------------------------------------------------------------------- \n\n\n';
+    log = log.substring(1, log.length-1)
+    log = log.replaceAll("\\n","\n")
+    log = log.replaceAll("\\","")
+    
+    // Append to file with proper formatting
+    await fs.appendFile('requests.log', `Logs of "${Date()}": \n\n` + log);
+  } catch (error) {
+    console.error('Failed to log request:', error);
+  }
+}
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -44,7 +60,7 @@ app.get('/v1/models', apiKeyAuth, (req, res) => {
 // Mock chat completion endpoint
 app.post('/v1/chat/completions', apiKeyAuth, (req, res) => {
   const { messages } = req.body;
-  
+
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({
       error: {
@@ -75,7 +91,9 @@ app.post('/v1/chat/completions', apiKeyAuth, (req, res) => {
     }
   };
 
-  console.log(req.body)
+  console.log(req.body);
+  logRequest(req.body.messages[0].content);
+  console.log("Logs can be found in 'requests.log' file")
   res.json(mockResponse);
 });
 

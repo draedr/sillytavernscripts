@@ -44,9 +44,10 @@
 2. You will see something like this:
 
     ![image](../Images/janitor-output.png)
-3. You will find two XML tags wrapped section, one with your persona name and another with character card name.
-4. The details between the tags like in my case `<Seirra>` and `</Seirra>` is the information of the character card.
-5. Just copy the details from there and paste inside SillyTavern.
-6. Close both the terminals after you are done.
+3. You will also find a file name "requests.log" in the folder where server.js file is.
+4. You will find two XML tags wrapped section, one with your persona name and another with character card name.
+5. The details between the tags like in my case `<Seirra>` and `</Seirra>` is the information of the character card.
+6. Just copy the details either from the "requests.log" file or from the terminal output and paste it inside SillyTavern.
+7. Close both the terminal after you are done.
 
 **Voila! This way you can copy any proxy enabled character card from janitor ai. Have Fun! 😉**
