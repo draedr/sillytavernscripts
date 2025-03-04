@@ -61,20 +61,70 @@ function extractCharacterName(messages) {
   return "unknown";
 }
 
-async function logRequest(body, characterName = "unknown") {
+// Process message content to extract and format content between tags
+function formatMessageContent(messages) {
+  let formattedContent = '';
+  
+  for (const message of messages) {
+    if (!message.content) continue;
+    
+    // Process based on role
+    if (message.role === 'system') {
+      formattedContent += `### SYSTEM MESSAGE ###\n\n`;
+      
+      // Process content to extract tagged sections
+      const content = message.content;
+      
+      // Find all XML-like tags and their content
+      const tagPattern = /<([^>]+)>([\s\S]*?)<\/\1>/g;
+      let match;
+      let tagFound = false;
+      
+      while ((match = tagPattern.exec(content)) !== null) {
+        tagFound = true;
+        const tagName = match[1].trim();
+        let tagContent = match[2];
+        
+        // Convert escaped newlines to actual newlines
+        tagContent = tagContent.replace(/\\n/g, '\n');
+        
+        formattedContent += `<${tagName}>\n${tagContent}\n</${tagName}>\n\n`;
+      }
+      
+      // If no tags found, output the raw content with newlines converted
+      if (!tagFound) {
+        formattedContent += content.replace(/\\n/g, '\n') + '\n\n';
+      }
+    } 
+    else if (message.role === 'assistant') {
+      // For assistant messages, wrap in firstmessage tags
+      let content = message.content.replace(/\\n/g, '\n');
+      formattedContent += `### ASSISTANT MESSAGE ###\n\n<firstmessage>\n${content}\n</firstmessage>\n\n`;
+    }
+    else if (message.role === 'user') {
+      // For user messages, include as is with proper newlines
+      let content = message.content.replace(/\\n/g, '\n');
+      formattedContent += `### USER MESSAGE ###\n\n${content}\n\n`;
+    }
+    
+    formattedContent += `${'='.repeat(40)}\n\n`;
+  }
+  
+  return formattedContent;
+}
+
+async function logRequest(messages, characterName = "unknown") {
   try {
     // Format timestamp
     const timestamp = new Date().toISOString();
     
+    // Process and format message content
+    const formattedContent = formatMessageContent(messages);
+    
     // Create a readable log entry
-    const logEntry = `==== Request at ${timestamp} ====\n\n${
-      typeof body === 'string' 
-        ? body 
-        : JSON.stringify(body, null, 2)
-    }\n\n${'='.repeat(50)}\n\n`;
+    const logEntry = `==== Request at ${timestamp} ====\n\n${formattedContent}\n\n`;
     
     // Create a sanitized version of the character name for the filename
-    // Remove any characters that might cause issues in filenames
     const safeCharName = characterName.toLowerCase()
       .replace(/[^a-z0-9_]/g, '_')
       .replace(/_+/g, '_');
@@ -112,6 +162,10 @@ async function logRequest(body, characterName = "unknown") {
       await fs.writeFile(filename, fileContent);
       console.log(`Created new log file for character: ${characterName}`);
     }
+    
+    // Also save the raw JSON for debugging purposes
+    const rawFilename = `request_${safeCharName}_raw.json`;
+    await fs.writeFile(rawFilename, JSON.stringify(messages, null, 2));
     
     return { filename, isNewCharacter };
   } catch (error) {
@@ -176,7 +230,7 @@ app.post('/v1/chat/completions', apiKeyAuth, async (req, res) => {
   // Log request with proper formatting using util.inspect
   console.log(util.inspect(req.body, { depth: null, colors: true, maxArrayLength: null }));
   
-  // Log to file with character name
+  // Log to file with character name and formatted content
   const { filename, isNewCharacter } = await logRequest(req.body.messages, characterName);
   
   // Enhanced console message
