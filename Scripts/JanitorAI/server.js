@@ -8,6 +8,20 @@ const util = require('util');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Directory for storing logs
+const LOGS_DIR = path.join(__dirname, 'logs');
+
+// Ensure logs directory exists
+async function ensureLogsDirectory() {
+  try {
+    await fs.access(LOGS_DIR);
+    console.log(`Logs directory exists at: ${LOGS_DIR}`);
+  } catch (error) {
+    console.log(`Creating logs directory at: ${LOGS_DIR}`);
+    await fs.mkdir(LOGS_DIR, { recursive: true });
+  }
+}
+
 // Configure your custom API keys here
 const VALID_API_KEYS = new Set([
   process.env.API_KEY || 'custom-key'
@@ -129,8 +143,8 @@ async function logRequest(messages, characterName = "unknown") {
       .replace(/[^a-z0-9_]/g, '_')
       .replace(/_+/g, '_');
     
-    // Create filename based on character name
-    const filename = `request_${safeCharName}.log`;
+    // Create filename based on character name (in logs directory)
+    const filename = path.join(LOGS_DIR, `request_${safeCharName}.log`);
     
     // Check if we've seen this character before
     const isNewCharacter = !loggedCharacters.has(safeCharName);
@@ -164,13 +178,13 @@ async function logRequest(messages, characterName = "unknown") {
     }
     
     // Also save the raw JSON for debugging purposes
-    const rawFilename = `request_${safeCharName}_raw.json`;
+    const rawFilename = path.join(LOGS_DIR, `request_${safeCharName}_raw.json`);
     await fs.writeFile(rawFilename, JSON.stringify(messages, null, 2));
     
     return { filename, isNewCharacter };
   } catch (error) {
     console.error('Failed to log request:', error);
-    return { filename: 'error-log.log', isNewCharacter: false };
+    return { filename: path.join(LOGS_DIR, 'error-log.log'), isNewCharacter: false };
   }
 }
 
@@ -254,8 +268,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Mock OpenAI server running on port ${port}`);
-  console.log(`Valid API keys: ${Array.from(VALID_API_KEYS).join(', ')}`);
-  console.log(`Log files will be created as: request_[character_name].log`);
-});
+// Ensure logs directory exists before starting the server
+(async () => {
+  try {
+    await ensureLogsDirectory();
+    
+    app.listen(port, () => {
+      console.log(`Mock OpenAI server running on port ${port}`);
+      console.log(`Valid API keys: ${Array.from(VALID_API_KEYS).join(', ')}`);
+      console.log(`Log files will be stored in: ${LOGS_DIR}`);
+    });
+  } catch (error) {
+    console.error('Failed to initialize server:', error);
+    process.exit(1);
+  }
+})();
