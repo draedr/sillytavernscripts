@@ -47,32 +47,71 @@ const apiKeyAuth = (req, res, next) => {
 
 // Function to extract character name from messages
 function extractCharacterName(messages) {
-  // Look through all messages
-  for (const message of messages) {
-    if (message.content) {
-      // First, remove system tags to avoid matching them
-      const contentWithoutSystem = message.content.replace(/<system>.*?<\/system>/gs, '');
-      
-      // Try to find character tags like <FirstName LastName>
-      const characterTagMatch = contentWithoutSystem.match(/<([^>]+)>/);
-      if (characterTagMatch && characterTagMatch[1]) {
-        // Exclude common non-character tags
-        const name = characterTagMatch[1].trim();
-        if (!['system', 'scenario', 'roleplay_guidlines', '/'].includes(name.toLowerCase())) {
-          return name;
-        }
+  // First, check if the user is roleplaying as a character
+  let userCharacter = null;
+  
+  // Check recent user messages to see if they start with "Character:" format
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (message.role === 'user' && message.content) {
+      const userCharMatch = message.content.match(/^([A-Za-z][A-Za-z0-9_\s]+):/);
+      if (userCharMatch && userCharMatch[1]) {
+        userCharacter = userCharMatch[1].trim();
+        break;
       }
-      
-      // Try to find Name ("Character Name") pattern
-      const nameQuotesMatch = contentWithoutSystem.match(/Name\s*\(\s*"([^"]+)"\s*\)/);
-      if (nameQuotesMatch && nameQuotesMatch[1]) {
-        return nameQuotesMatch[1].trim();
+    }
+  }
+  
+  // Process system messages to find the AI's character
+  const systemMessages = messages.filter(msg => msg.role === 'system');
+  
+  for (const message of systemMessages) {
+    if (!message.content) continue;
+    
+    // First, remove system tags to avoid matching them
+    const contentWithoutSystem = message.content.replace(/<system>.*?<\/system>/gs, '');
+    
+    // Find all character tags in the content
+    const characterTagRegex = /<([^>]+)>/g;
+    let match;
+    const foundCharacters = [];
+    
+    while ((match = characterTagRegex.exec(contentWithoutSystem)) !== null) {
+      const name = match[1].trim();
+      if (!['system', 'scenario', 'example_dialogs', 'roleplay_guidelines', '/'].includes(name.toLowerCase())) {
+        foundCharacters.push(name);
       }
-      
-      // Look for Name: pattern as a fallback
-      const nameColon = contentWithoutSystem.match(/Name:\s*([^,\n]+)/i);
-      if (nameColon && nameColon[1]) {
-        return nameColon[1].trim();
+    }
+    
+    // If we found multiple characters, pick the one that's NOT the user character
+    if (foundCharacters.length > 0) {
+      if (userCharacter) {
+        // Find a character that's not the user character
+        const aiCharacter = foundCharacters.find(char => 
+          !userCharacter.toLowerCase().includes(char.toLowerCase()) && 
+          !char.toLowerCase().includes(userCharacter.toLowerCase())
+        );
+        if (aiCharacter) return aiCharacter;
+      }
+      // If no user character or couldn't find a distinct AI character, return the first character
+      return foundCharacters[0];
+    }
+    
+    // Try to find Name ("Character Name") pattern
+    const nameQuotesMatch = contentWithoutSystem.match(/Name\s*\(\s*"([^"]+)"\s*\)/);
+    if (nameQuotesMatch && nameQuotesMatch[1]) {
+      const name = nameQuotesMatch[1].trim();
+      if (userCharacter && name.toLowerCase() === userCharacter.toLowerCase()) continue;
+      return name;
+    }
+    
+    // Look for Name: pattern as a fallback
+    const nameColonMatches = contentWithoutSystem.match(/Name:\s*([^,\n]+)/gi);
+    if (nameColonMatches) {
+      for (const nameColonMatch of nameColonMatches) {
+        const name = nameColonMatch.replace(/Name:\s*/i, '').trim();
+        if (userCharacter && name.toLowerCase() === userCharacter.toLowerCase()) continue;
+        return name;
       }
     }
   }
