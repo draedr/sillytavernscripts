@@ -53,14 +53,20 @@ function extractCharacterName(messages) {
       // First, remove system tags to avoid matching them
       const contentWithoutSystem = message.content.replace(/<system>.*?<\/system>/gs, '');
       
-      // Try to find character tags like <Scarlett>
-      const characterTagMatch = contentWithoutSystem.match(/<([A-Za-z][^>\s]+)[\s>]/);
+      // Try to find character tags like <FirstName LastName>
+      const characterTagMatch = contentWithoutSystem.match(/<([^>]+)>/);
       if (characterTagMatch && characterTagMatch[1]) {
         // Exclude common non-character tags
-        const name = characterTagMatch[1];
+        const name = characterTagMatch[1].trim();
         if (!['system', 'scenario', 'roleplay_guidlines', '/'].includes(name.toLowerCase())) {
           return name;
         }
+      }
+      
+      // Try to find Name ("Character Name") pattern
+      const nameQuotesMatch = contentWithoutSystem.match(/Name\s*\(\s*"([^"]+)"\s*\)/);
+      if (nameQuotesMatch && nameQuotesMatch[1]) {
+        return nameQuotesMatch[1].trim();
       }
       
       // Look for Name: pattern as a fallback
