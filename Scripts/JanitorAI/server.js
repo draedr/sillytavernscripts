@@ -45,102 +45,144 @@ const apiKeyAuth = (req, res, next) => {
   next();
 };
 
-// Function to extract user character name from messages
-function extractUserCharacter(messages) {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i];
-    if (message.role === 'user' && message.content) {
-      const userCharMatch = message.content.match(/^([A-Za-z][A-Za-z0-9_\s]+):/);
-      if (userCharMatch && userCharMatch[1]) {
-        return userCharMatch[1].trim();
-      }
-    }
-  }
-  return null;
-}
-
-// Function to safely replace character name with {{user}}
-function replaceUserCharacter(text, userCharacter) {
-  if (!userCharacter || !text.includes(userCharacter)) return text;
+// Function to extract all character names from system messages
+function extractAllCharacters(messages) {
+  const characters = [];
   
-  // Replace at start of lines (Niji: blah blah)
-  text = text.replace(new RegExp(`^${userCharacter}:`, 'gm'), '{{user}}:');
-  
-  // Replace as a whole word
-  text = text.replace(new RegExp(`\\b${userCharacter}\\b`, 'g'), '{{user}}');
-  
-  return text;
-}
-
-// Function to extract character name from messages
-function extractCharacterName(messages) {
-  // First, check if the user is roleplaying as a character
-  const userCharacter = extractUserCharacter(messages);
-  
-  // Process system messages to find the AI's character
+  // Process system messages to find all character tags
   const systemMessages = messages.filter(msg => msg.role === 'system');
   
   for (const message of systemMessages) {
     if (!message.content) continue;
     
-    // First, remove system tags to avoid matching them
+    // Remove system tags to avoid matching them
     const contentWithoutSystem = message.content.replace(/<system>.*?<\/system>/gs, '');
     
-    // Find all character tags in the content
-    const characterTagRegex = /<([^>]+)>/g;
-    let match;
-    const foundCharacters = [];
+    // Find all character tags in the content - match even with emojis and special chars
+    const tagMatches = Array.from(contentWithoutSystem.matchAll(/<([^>]+)>([^<]*|<(?!\/\1>))*<\/\1>/g));
     
-    while ((match = characterTagRegex.exec(contentWithoutSystem)) !== null) {
-      const name = match[1].trim();
-      if (!['system', 'scenario', 'example_dialogs', 'roleplay_guidelines', '/'].includes(name.toLowerCase())) {
-        foundCharacters.push(name);
+    for (const match of tagMatches) {
+      if (match && match[1]) {
+        const tagName = match[1].trim();
+        // Filter out common non-character tags
+        if (!['system', 'scenario', 'example_dialogs', 'roleplay_guidelines', '/'].includes(tagName.toLowerCase())) {
+          // Check if this looks like a character tag (has content describing a character)
+          const tagContent = match[0] || '';
+          if (tagContent.includes('Name:') || 
+              tagContent.includes('Age:') || 
+              tagContent.includes('Personality:') ||
+              tagContent.includes('Character Details') ||
+              tagContent.length > 200) { // Long content is likely a character description
+            characters.push(tagName);
+          }
+        }
       }
     }
     
-    // If we found multiple characters, pick the one that's NOT the user character
-    if (foundCharacters.length > 0) {
-      if (userCharacter) {
-        // Find a character that's not the user character
-        const aiCharacter = foundCharacters.find(char => 
-          !userCharacter.toLowerCase().includes(char.toLowerCase()) && 
-          !char.toLowerCase().includes(userCharacter.toLowerCase())
-        );
-        if (aiCharacter) return aiCharacter;
-      }
-      // If no user character or couldn't find a distinct AI character, return the first character
-      return foundCharacters[0];
-    }
-    
-    // Try to find Name ("Character Name") pattern
-    const nameQuotesMatch = contentWithoutSystem.match(/Name\s*\(\s*"([^"]+)"\s*\)/);
-    if (nameQuotesMatch && nameQuotesMatch[1]) {
-      const name = nameQuotesMatch[1].trim();
-      if (userCharacter && name.toLowerCase() === userCharacter.toLowerCase()) continue;
-      return name;
-    }
-    
-    // Look for Name: pattern as a fallback
-    const nameColonMatches = contentWithoutSystem.match(/Name:\s*([^,\n]+)/gi);
-    if (nameColonMatches) {
-      for (const nameColonMatch of nameColonMatches) {
-        const name = nameColonMatch.replace(/Name:\s*/i, '').trim();
-        if (userCharacter && name.toLowerCase() === userCharacter.toLowerCase()) continue;
-        return name;
+    // Try to find Name ("Character Name") pattern as well
+    const nameQuotesMatches = contentWithoutSystem.match(/Name\s*\(\s*"([^"]+)"\s*\)/g);
+    if (nameQuotesMatches) {
+      for (const nameMatch of nameQuotesMatches) {
+        const name = nameMatch.match(/Name\s*\(\s*"([^"]+)"\s*\)/)[1].trim();
+        characters.push(name);
       }
     }
   }
   
-  // Default if no name found
-  return "unknown";
+  return characters;
 }
 
-// Process message content to extract and format content between tags
-function formatMessageContent(messages) {
-  let formattedContent = '';
+// Function to detect user's roleplay character from messages
+function detectUserCharacter(messages, allCharacters) {
+  // Check recent user messages for character prefix pattern
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (message.role === 'user' && message.content) {
+      // Look for a character name prefix followed by colon
+      // This regex matches even complex names with emojis
+      const prefixMatch = message.content.match(/^([^:]+):/);
+      if (prefixMatch && prefixMatch[1]) {
+        const potentialUserChar = prefixMatch[1].trim();
+        
+        // Check if this matches closely with any known character
+        for (const character of allCharacters) {
+          // Compare without emojis and special chars for better matching
+          const normalizedPotential = potentialUserChar.replace(/[^\w\s]/g, '').trim().toLowerCase();
+          const normalizedCharacter = character.replace(/[^\w\s]/g, '').trim().toLowerCase();
+          
+          // If the normalized versions match, this is the user's character
+          if (normalizedPotential === normalizedCharacter || 
+              normalizedPotential.includes(normalizedCharacter) || 
+              normalizedCharacter.includes(normalizedPotential)) {
+            return character;
+          }
+        }
+        
+        // If no exact match but we have a prefix, use it
+        return potentialUserChar;
+      }
+    }
+  }
   
-  // First, identify the user character if any
-  const userCharacter = extractUserCharacter(messages);
+  return null;
+}
+
+// Function to determine which character the AI is roleplaying as
+function determineAICharacter(allCharacters, userCharacter) {
+  if (!allCharacters.length) return "unknown";
+  
+  // If there's only one character, use it
+  if (allCharacters.length === 1) return allCharacters[0];
+  
+  // If we know the user's character, the AI character is likely different
+  if (userCharacter) {
+    // Find a character that's different from the user character
+    for (const character of allCharacters) {
+      // Compare without emojis and special chars
+      const normalizedUser = userCharacter.replace(/[^\w\s]/g, '').trim().toLowerCase();
+      const normalizedChar = character.replace(/[^\w\s]/g, '').trim().toLowerCase();
+      
+      // If they're different, this is likely the AI character
+      if (normalizedUser !== normalizedChar && 
+          !normalizedUser.includes(normalizedChar) && 
+          !normalizedChar.includes(normalizedUser)) {
+        return character;
+      }
+    }
+  }
+  
+  // If we couldn't determine, use the first character that isn't likely the user
+  for (const character of allCharacters) {
+    // Skip very short names which might be user-typed
+    if (character.length > 2) return character;
+  }
+  
+  // Fallback to first character
+  return allCharacters[0];
+}
+
+// Replace user character with {{user}} in text
+function anonymizeUserCharacter(text, userCharacter) {
+  if (!userCharacter || !text.includes(userCharacter)) return text;
+  
+  // Escape special chars in the user character for regex
+  const escapedChar = userCharacter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // Replace at start of lines (Character: message)
+  text = text.replace(new RegExp(`^${escapedChar}:`, 'gm'), '{{user}}:');
+  
+  // Replace as a whole word with word boundaries
+  text = text.replace(new RegExp(`\\b${escapedChar}\\b`, 'g'), '{{user}}');
+  
+  // Also try without word boundaries for names with special chars
+  text = text.replace(new RegExp(escapedChar, 'g'), '{{user}}');
+  
+  return text;
+}
+
+// Process message content and format it for logs
+function formatMessageContent(messages, userCharacter) {
+  let formattedContent = '';
   
   for (const message of messages) {
     if (!message.content) continue;
@@ -165,9 +207,9 @@ function formatMessageContent(messages) {
         // Convert escaped newlines to actual newlines
         tagContent = tagContent.replace(/\\n/g, '\n');
         
-        // Replace user character name with {{user}} if found
+        // Anonymize user character in content
         if (userCharacter) {
-          tagContent = replaceUserCharacter(tagContent, userCharacter);
+          tagContent = anonymizeUserCharacter(tagContent, userCharacter);
         }
         
         formattedContent += `<${tagName}>\n${tagContent}\n</${tagName}>\n\n`;
@@ -175,36 +217,27 @@ function formatMessageContent(messages) {
       
       // If no tags found, output the raw content with newlines converted
       if (!tagFound) {
-        let content = message.content.replace(/\\n/g, '\n');
-        
-        // Replace user character name with {{user}} if found
+        let processedContent = content.replace(/\\n/g, '\n');
         if (userCharacter) {
-          content = replaceUserCharacter(content, userCharacter);
+          processedContent = anonymizeUserCharacter(processedContent, userCharacter);
         }
-        
-        formattedContent += content + '\n\n';
+        formattedContent += processedContent + '\n\n';
       }
     } 
     else if (message.role === 'assistant') {
       // For assistant messages, wrap in firstmessage tags
       let content = message.content.replace(/\\n/g, '\n');
-      
-      // Replace user character name with {{user}} if found
       if (userCharacter) {
-        content = replaceUserCharacter(content, userCharacter);
+        content = anonymizeUserCharacter(content, userCharacter);
       }
-      
       formattedContent += `### ASSISTANT MESSAGE ###\n\n<firstmessage>\n${content}\n</firstmessage>\n\n`;
     }
     else if (message.role === 'user') {
       // For user messages, include as is with proper newlines
       let content = message.content.replace(/\\n/g, '\n');
-      
-      // Replace user character name with {{user}} if found
       if (userCharacter) {
-        content = replaceUserCharacter(content, userCharacter);
+        content = anonymizeUserCharacter(content, userCharacter);
       }
-      
       formattedContent += `### USER MESSAGE ###\n\n${content}\n\n`;
     }
     
@@ -214,24 +247,26 @@ function formatMessageContent(messages) {
   return formattedContent;
 }
 
-async function logRequest(messages, characterName = "unknown") {
+async function logRequest(messages, characterName = "unknown", userCharacter = null) {
   try {
     // Format timestamp
     const timestamp = new Date().toISOString();
     
     // Process and format message content
-    const formattedContent = formatMessageContent(messages);
+    const formattedContent = formatMessageContent(messages, userCharacter);
     
     // Create a readable log entry
     const logEntry = `==== Request at ${timestamp} ====\n\n${formattedContent}\n\n`;
     
     // Create a sanitized version of the character name for the filename
     const safeCharName = characterName.toLowerCase()
-      .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_+/g, '_');
+      .replace(/[^\w\s]/g, '')  // Remove all non-alphanumeric chars including emojis
+      .trim()
+      .replace(/\s+/g, '_')     // Replace spaces with underscores
+      .replace(/_+/g, '_');     // Collapse multiple underscores
     
     // Create filename based on character name (in logs directory)
-    const filename = path.join(LOGS_DIR, `request_${safeCharName}.log`);
+    const filename = path.join(LOGS_DIR, `request_${safeCharName || 'unknown'}.log`);
     
     // Check if we've seen this character before
     const isNewCharacter = !loggedCharacters.has(safeCharName);
@@ -265,7 +300,7 @@ async function logRequest(messages, characterName = "unknown") {
     }
     
     // Also save the raw JSON for debugging purposes
-    const rawFilename = path.join(LOGS_DIR, `request_${safeCharName}_raw.json`);
+    const rawFilename = path.join(LOGS_DIR, `request_${safeCharName || 'unknown'}_raw.json`);
     await fs.writeFile(rawFilename, JSON.stringify(messages, null, 2));
     
     return { filename, isNewCharacter };
@@ -304,8 +339,14 @@ app.post('/v1/chat/completions', apiKeyAuth, async (req, res) => {
     });
   }
 
-  // Extract character name from messages
-  const characterName = extractCharacterName(messages);
+  // First, extract ALL characters from the system messages
+  const allCharacters = extractAllCharacters(messages);
+  
+  // Then detect which character the user is roleplaying as
+  const userCharacter = detectUserCharacter(messages, allCharacters);
+  
+  // Finally, determine which character the AI should be roleplaying as
+  const aiCharacter = determineAICharacter(allCharacters, userCharacter);
 
   // Generate mock response
   const mockResponse = {
@@ -331,14 +372,19 @@ app.post('/v1/chat/completions', apiKeyAuth, async (req, res) => {
   // Log request with proper formatting using util.inspect
   console.log(util.inspect(req.body, { depth: null, colors: true, maxArrayLength: null }));
   
+  // Log debug info about characters
+  console.log(`Detected characters: ${allCharacters.join(', ')}`);
+  console.log(`User character: ${userCharacter || 'Unknown'}`);
+  console.log(`AI character: ${aiCharacter}`);
+  
   // Log to file with character name and formatted content
-  const { filename, isNewCharacter } = await logRequest(req.body.messages, characterName);
+  const { filename, isNewCharacter } = await logRequest(req.body.messages, aiCharacter, userCharacter);
   
   // Enhanced console message
   if (isNewCharacter) {
-    console.log(`New character detected: ${characterName} - Logs saved to '${filename}'`);
+    console.log(`New character detected: ${aiCharacter} - Logs saved to '${filename}'`);
   } else {
-    console.log(`Logs for ${characterName} appended to '${filename}'`);
+    console.log(`Logs for ${aiCharacter} appended to '${filename}'`);
   }
   
   res.json(mockResponse);
