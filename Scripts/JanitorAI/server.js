@@ -45,22 +45,37 @@ const apiKeyAuth = (req, res, next) => {
   next();
 };
 
-// Function to extract character name from messages
-function extractCharacterName(messages) {
-  // First, check if the user is roleplaying as a character
-  let userCharacter = null;
-  
-  // Check recent user messages to see if they start with "Character:" format
+// Function to extract user character name from messages
+function extractUserCharacter(messages) {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     if (message.role === 'user' && message.content) {
       const userCharMatch = message.content.match(/^([A-Za-z][A-Za-z0-9_\s]+):/);
       if (userCharMatch && userCharMatch[1]) {
-        userCharacter = userCharMatch[1].trim();
-        break;
+        return userCharMatch[1].trim();
       }
     }
   }
+  return null;
+}
+
+// Function to safely replace character name with {{user}}
+function replaceUserCharacter(text, userCharacter) {
+  if (!userCharacter || !text.includes(userCharacter)) return text;
+  
+  // Replace at start of lines (Niji: blah blah)
+  text = text.replace(new RegExp(`^${userCharacter}:`, 'gm'), '{{user}}:');
+  
+  // Replace as a whole word
+  text = text.replace(new RegExp(`\\b${userCharacter}\\b`, 'g'), '{{user}}');
+  
+  return text;
+}
+
+// Function to extract character name from messages
+function extractCharacterName(messages) {
+  // First, check if the user is roleplaying as a character
+  const userCharacter = extractUserCharacter(messages);
   
   // Process system messages to find the AI's character
   const systemMessages = messages.filter(msg => msg.role === 'system');
@@ -124,6 +139,9 @@ function extractCharacterName(messages) {
 function formatMessageContent(messages) {
   let formattedContent = '';
   
+  // First, identify the user character if any
+  const userCharacter = extractUserCharacter(messages);
+  
   for (const message of messages) {
     if (!message.content) continue;
     
@@ -147,22 +165,46 @@ function formatMessageContent(messages) {
         // Convert escaped newlines to actual newlines
         tagContent = tagContent.replace(/\\n/g, '\n');
         
+        // Replace user character name with {{user}} if found
+        if (userCharacter) {
+          tagContent = replaceUserCharacter(tagContent, userCharacter);
+        }
+        
         formattedContent += `<${tagName}>\n${tagContent}\n</${tagName}>\n\n`;
       }
       
       // If no tags found, output the raw content with newlines converted
       if (!tagFound) {
-        formattedContent += content.replace(/\\n/g, '\n') + '\n\n';
+        let content = message.content.replace(/\\n/g, '\n');
+        
+        // Replace user character name with {{user}} if found
+        if (userCharacter) {
+          content = replaceUserCharacter(content, userCharacter);
+        }
+        
+        formattedContent += content + '\n\n';
       }
     } 
     else if (message.role === 'assistant') {
       // For assistant messages, wrap in firstmessage tags
       let content = message.content.replace(/\\n/g, '\n');
+      
+      // Replace user character name with {{user}} if found
+      if (userCharacter) {
+        content = replaceUserCharacter(content, userCharacter);
+      }
+      
       formattedContent += `### ASSISTANT MESSAGE ###\n\n<firstmessage>\n${content}\n</firstmessage>\n\n`;
     }
     else if (message.role === 'user') {
       // For user messages, include as is with proper newlines
       let content = message.content.replace(/\\n/g, '\n');
+      
+      // Replace user character name with {{user}} if found
+      if (userCharacter) {
+        content = replaceUserCharacter(content, userCharacter);
+      }
+      
       formattedContent += `### USER MESSAGE ###\n\n${content}\n\n`;
     }
     
