@@ -33,7 +33,6 @@
     "wrap_in_quotes": false,
     "names_behavior": 0,
     "send_if_empty": "",
-    "jailbreak_system": false,
     "impersonation_prompt": "[Change of plans, now you have to write your reply from the point of view of {{user}}, use chat history to know the context and to adhere to the {{user}}'s tone and writing style.]",
     "new_chat_prompt": "",
     "new_group_chat_prompt": "[Start a new group chat. Group members: {{group}}]",
@@ -232,7 +231,7 @@
             "enabled": false,
             "marker": false,
             "name": "Example Chats",
-            "role": "system",
+            "role": "user",
             "content": "  <EXAMPLES description=\"example chats to showcase the formatting, style and overall tone of {{char}} that you must follow\">\n{{mesExamples}}\n  </EXAMPLES>",
             "injection_position": 0,
             "injection_depth": 4,
@@ -373,11 +372,11 @@
                     "enabled": true
                 },
                 {
-                    "identifier": "78f75109-82d5-4cc4-ad66-76baed1d4853",
+                    "identifier": "7fcc2d3f-7ecf-484d-9f00-aad4319e9478",
                     "enabled": true
                 },
                 {
-                    "identifier": "7fcc2d3f-7ecf-484d-9f00-aad4319e9478",
+                    "identifier": "78f75109-82d5-4cc4-ad66-76baed1d4853",
                     "enabled": true
                 },
                 {
@@ -443,7 +442,7 @@
     "function_calling": false,
     "show_thoughts": true,
     "reasoning_effort": "medium",
+    "enable_web_search": true,
     "seed": -1,
-    "n": 1,
-    "enable_web_search": true
+    "n": 1
 }
