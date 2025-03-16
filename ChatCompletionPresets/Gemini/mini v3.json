@@ -208,7 +208,7 @@
             "marker": false,
             "name": "Character",
             "role": "system",
-            "content": "  <CHARACTER name=\"{{char}}\" description=\"character role that you play\">\n{{description}}\n{{personality}}\n  </CHARACTER>\n",
+            "content": "  <CHARACTER name=\"{{char}}\" description=\"character for you to play\">\n{{description}}\n{{personality}}\n  </CHARACTER>\n",
             "injection_position": 0,
             "injection_depth": 4,
             "forbid_overrides": false
@@ -408,6 +408,10 @@
                     "enabled": false
                 },
                 {
+                    "identifier": "jailbreak",
+                    "enabled": false
+                },
+                {
                     "identifier": "personaDescription",
                     "enabled": false
                 },
@@ -433,10 +437,6 @@
                 },
                 {
                     "identifier": "nsfw",
-                    "enabled": false
-                },
-                {
-                    "identifier": "jailbreak",
                     "enabled": false
                 }
             ]
