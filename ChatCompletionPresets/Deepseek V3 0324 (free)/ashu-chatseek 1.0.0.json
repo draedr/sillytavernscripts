@@ -1,4 +1,436 @@
 {
-    "genamt": 400,
-    "max_length": 64000
+    "chat_completion_source": "openrouter",
+    "openai_model": "gpt-4-turbo",
+    "claude_model": "claude-3-5-sonnet-20240620",
+    "windowai_model": "",
+    "openrouter_model": "deepseek/deepseek-chat-v3-0324:free",
+    "openrouter_use_fallback": false,
+    "openrouter_group_models": false,
+    "openrouter_sort_models": "alphabetically",
+    "openrouter_providers": [
+        "Chutes"
+    ],
+    "openrouter_allow_fallbacks": false,
+    "openrouter_middleout": "off",
+    "ai21_model": "jamba-1.5-large",
+    "mistralai_model": "mistral-large-latest",
+    "cohere_model": "command-r-plus",
+    "perplexity_model": "llama-3-70b-instruct",
+    "groq_model": "deepseek-r1-distill-llama-70b",
+    "zerooneai_model": "yi-large",
+    "custom_model": "",
+    "custom_prompt_post_processing": "merge",
+    "google_model": "gemini-pro",
+    "temperature": 0.7,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "top_p": 0.9,
+    "top_k": 40,
+    "top_a": 0,
+    "min_p": 0,
+    "repetition_penalty": 1,
+    "openai_max_context": 131072,
+    "openai_max_tokens": 2048,
+    "wrap_in_quotes": false,
+    "names_behavior": 0,
+    "send_if_empty": "",
+    "impersonation_prompt": "[Write your next reply from the point of view of {{user}}, using the chat history so far as a guideline for the writing style of {{user}}. Don't write as {{char}} or system. Don't describe actions of {{char}}.]",
+    "new_chat_prompt": "",
+    "new_group_chat_prompt": "[Start a new group chat. Group members: {{group}}]",
+    "new_example_chat_prompt": "[Example Chat]",
+    "continue_nudge_prompt": "[Continue the following message. Do not include ANY parts of the original message. Use capitalization and punctuation as if your reply is a part of the original message: {{lastChatMessage}}]",
+    "bias_preset_selected": "Default (none)",
+    "max_context_unlocked": false,
+    "wi_format": "{0}",
+    "scenario_format": "{{scenario}}",
+    "personality_format": "{{personality}}",
+    "group_nudge_prompt": "[Write the next reply only as {{char}}.]",
+    "stream_openai": true,
+    "prompts": [
+        {
+            "name": "🌟 Main Prompt",
+            "system_prompt": true,
+            "role": "system",
+            "content": "You are a storyteller engaged with user in an immersive and continuous roleplay, your job is to progress the story by playing the role of NPCs which include ({{char}}, narrator and other supporting characters) meanwhile user plays the role of protagonist {{user}}. To help with your job there are instructions and details given below wrapped in their respective XML tags:\n\n<INSTRUCTIONS>\n  - Generate dialogues inside double quote (\"\"), and actions and descriptions without any quotation marks. Avoid using asterisks (*), use it only when very very necessary like during emphasis.\n  - Stay In Character: Consistently portray your assigned role with accurate knowledge, speech patterns, and traits.\n  - Engage Through Show, Don’t Tell: Use vivid, sensory descriptions for actions, emotions, and environments. Prioritize dialogue, body language, and environmental reactions over exposition.\n  - Advance the story with 1–3 paragraphs, balancing action, dialogue, and atmosphere. End with meaningful choices or open-ended prompts.\n  - Character Development: Gradually reveal flaws, motivations, and backstory. Let characters evolve through decisions. Highlight moral dilemmas or emotional struggles. Relationships should evolve naturally based on shared experiences and choices.\n  - Pacing: Alternate between fast-paced scenes and slower, reflective moments. Use cliffhangers, time jumps, or downtime to maintain tension.\n  - Introduce new details organically to distinguish your response from the previous ones - an intriguing event, an insightful reply, a previously unseen aspect of an object, etc.\n  - You may introduce plot twists organically, push the ongoing arc onward, or slow down the scene to create an emotional moment depending on the situation. Keep track of the context, so everything flows smoothly.\n  - User's responses are only attempts. If {{user}} tries to do something very impossible, fail the attempt. Only pass {{user}}'s attempts if it looks possible and realistic.\n  - Text inside square brackets [] are top level system commands also used to write OOC (out of character) comments.\n</INSTRUCTIONS>\n{{charPrompt}}",
+            "identifier": "main",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": true
+        },
+        {
+            "name": "Auxiliary Prompt",
+            "system_prompt": true,
+            "role": "system",
+            "content": "",
+            "identifier": "nsfw"
+        },
+        {
+            "identifier": "dialogueExamples",
+            "name": "Chat Examples",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "name": "Post-History Instructions",
+            "system_prompt": true,
+            "role": "system",
+            "content": "",
+            "identifier": "jailbreak"
+        },
+        {
+            "identifier": "chatHistory",
+            "name": "Chat History",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "worldInfoAfter",
+            "name": "World Info (after)",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "worldInfoBefore",
+            "name": "🌐 World Info (before)",
+            "system_prompt": true,
+            "marker": true,
+            "role": "system",
+            "content": "",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "enhanceDefinitions",
+            "role": "system",
+            "name": "Enhance Definitions",
+            "content": "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute.",
+            "system_prompt": true,
+            "marker": false
+        },
+        {
+            "identifier": "charDescription",
+            "name": "Char Description",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "charPersonality",
+            "name": "Char Personality",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "scenario",
+            "name": "Scenario",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "personaDescription",
+            "name": "Persona Description",
+            "system_prompt": true,
+            "marker": true
+        },
+        {
+            "identifier": "401cb860-ec01-4c14-99d4-78cad76f73af",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "<DETAILS>",
+            "role": "system",
+            "content": "<DETAILS>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "1a1f4641-4b85-48b5-bf71-6157340397d8",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "</DETAILS>",
+            "role": "system",
+            "content": "</DETAILS>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "81a70901-6138-4922-b6c6-d873192bbb37",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "🌐 <WORLD>",
+            "role": "system",
+            "content": "  <WORLD description=\"world or setting to immerse in\">",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "b70779fa-1c76-4481-90f1-da270dd7cded",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "🌐 </WORLD>",
+            "role": "system",
+            "content": "  </WORLD>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "8b141108-caf2-499f-880a-80de3b61aee9",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "👤 User",
+            "role": "system",
+            "content": "  <USER name=\"{{user}}\" description=\"the role that user plays\">\n{{persona}}\n  </USER>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "0d90b02a-34b4-4466-ae11-e7d2bc05aa30",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "👥 Character",
+            "role": "system",
+            "content": "  <CHARACTER name=\"{{char}}\" description=\"one of the roles that you play\">\n{{description}}\n---\n{{personality}}\n  </CHARACTER>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "2365570d-908d-4619-a1b0-45b2659b5f50",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "📃 Scenario / Context",
+            "role": "system",
+            "content": "  <CONTEXT description=\"initial context of the roleplay\">\n{{scenario}}\n  </CONTEXT>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "fdb4888a-5ed1-4883-abc5-922395d39ad6",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "📜 <LORE>",
+            "role": "system",
+            "content": "  <LORE description=\"extra information to keep in mind\">",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "7264de79-10f7-4b21-b9ba-1cca8b295333",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "📜 </LORE>",
+            "role": "system",
+            "content": "  <LORE>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "f92e7f2d-c9a1-47b3-9436-6b494f43cf14",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "✉️ Example Chats",
+            "role": "user",
+            "content": "  <EXAMPLES description=\"example chats to showcase the formatting, style and overall tone of {{char}} that you must follow\">\n{{mesExamples}}\n  </EXAMPLES>",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        },
+        {
+            "identifier": "da42e2a9-bdab-42e1-97a6-9e273f6e04d4",
+            "system_prompt": false,
+            "enabled": false,
+            "marker": false,
+            "name": "First Message",
+            "role": "user",
+            "content": "[Start the roleplay, you roleplay as NPCs which include ({{char}}, surrounding characters and narrator). Never respond as {{user}}.]",
+            "injection_position": 0,
+            "injection_depth": 4,
+            "forbid_overrides": false
+        }
+    ],
+    "prompt_order": [
+        {
+            "character_id": 100000,
+            "order": [
+                {
+                    "identifier": "main",
+                    "enabled": true
+                },
+                {
+                    "identifier": "worldInfoBefore",
+                    "enabled": true
+                },
+                {
+                    "identifier": "charDescription",
+                    "enabled": true
+                },
+                {
+                    "identifier": "charPersonality",
+                    "enabled": true
+                },
+                {
+                    "identifier": "scenario",
+                    "enabled": true
+                },
+                {
+                    "identifier": "enhanceDefinitions",
+                    "enabled": false
+                },
+                {
+                    "identifier": "nsfw",
+                    "enabled": true
+                },
+                {
+                    "identifier": "worldInfoAfter",
+                    "enabled": true
+                },
+                {
+                    "identifier": "dialogueExamples",
+                    "enabled": true
+                },
+                {
+                    "identifier": "chatHistory",
+                    "enabled": true
+                },
+                {
+                    "identifier": "jailbreak",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "character_id": 100001,
+            "order": [
+                {
+                    "identifier": "main",
+                    "enabled": true
+                },
+                {
+                    "identifier": "401cb860-ec01-4c14-99d4-78cad76f73af",
+                    "enabled": true
+                },
+                {
+                    "identifier": "81a70901-6138-4922-b6c6-d873192bbb37",
+                    "enabled": false
+                },
+                {
+                    "identifier": "worldInfoBefore",
+                    "enabled": true
+                },
+                {
+                    "identifier": "b70779fa-1c76-4481-90f1-da270dd7cded",
+                    "enabled": false
+                },
+                {
+                    "identifier": "8b141108-caf2-499f-880a-80de3b61aee9",
+                    "enabled": true
+                },
+                {
+                    "identifier": "0d90b02a-34b4-4466-ae11-e7d2bc05aa30",
+                    "enabled": true
+                },
+                {
+                    "identifier": "2365570d-908d-4619-a1b0-45b2659b5f50",
+                    "enabled": true
+                },
+                {
+                    "identifier": "fdb4888a-5ed1-4883-abc5-922395d39ad6",
+                    "enabled": false
+                },
+                {
+                    "identifier": "worldInfoAfter",
+                    "enabled": true
+                },
+                {
+                    "identifier": "7264de79-10f7-4b21-b9ba-1cca8b295333",
+                    "enabled": false
+                },
+                {
+                    "identifier": "1a1f4641-4b85-48b5-bf71-6157340397d8",
+                    "enabled": true
+                },
+                {
+                    "identifier": "f92e7f2d-c9a1-47b3-9436-6b494f43cf14",
+                    "enabled": true
+                },
+                {
+                    "identifier": "da42e2a9-bdab-42e1-97a6-9e273f6e04d4",
+                    "enabled": true
+                },
+                {
+                    "identifier": "chatHistory",
+                    "enabled": true
+                },
+                {
+                    "identifier": "personaDescription",
+                    "enabled": false
+                },
+                {
+                    "identifier": "charDescription",
+                    "enabled": false
+                },
+                {
+                    "identifier": "charPersonality",
+                    "enabled": false
+                },
+                {
+                    "identifier": "scenario",
+                    "enabled": false
+                },
+                {
+                    "identifier": "enhanceDefinitions",
+                    "enabled": false
+                },
+                {
+                    "identifier": "nsfw",
+                    "enabled": false
+                },
+                {
+                    "identifier": "dialogueExamples",
+                    "enabled": false
+                },
+                {
+                    "identifier": "jailbreak",
+                    "enabled": false
+                }
+            ]
+        }
+    ],
+    "api_url_scale": "",
+    "show_external_models": false,
+    "assistant_prefill": "",
+    "assistant_impersonation": "",
+    "claude_use_sysprompt": false,
+    "use_makersuite_sysprompt": true,
+    "use_alt_scale": false,
+    "squash_system_messages": false,
+    "image_inlining": false,
+    "inline_image_quality": "auto",
+    "bypass_status_check": false,
+    "continue_prefill": false,
+    "continue_postfix": " ",
+    "function_calling": false,
+    "show_thoughts": true,
+    "reasoning_effort": "high",
+    "enable_web_search": false,
+    "request_images": false,
+    "seed": -1,
+    "n": 1
 }
