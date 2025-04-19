@@ -279,7 +279,7 @@
             "marker": false,
             "name": "🔁 System to User Toggle",
             "role": "user",
-            "content": "{{// This sends the below information as first message by user instead of system_instructions}}{{trim}}\n{{noop}}",
+            "content": "{{// This sends the below information as first message by user instead of system_instructions}}{{trim}}\n  ",
             "injection_position": 0,
             "injection_depth": 4,
             "forbid_overrides": false
