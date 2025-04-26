@@ -8,7 +8,7 @@ For more info and help, feel free to contact me at my [reddit](https://www.reddi
 
 ## All presets:
 - [Gemini](ChatCompletionPresets/Gemini/)
-- [Deepseek]("ChatCompletionPresets/Deepseek V3 0324 (free)/")
+- [Deepseek]("ChatCompletionPresets/Deepseek V3 0324 (free)")
 
 ## Guides:
 - [Scrapping character cards details from janitor ai using nodejs and cloudflare.](Guides/JanitorAI_Scrapper.md)
