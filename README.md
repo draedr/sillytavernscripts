@@ -1,5 +1,5 @@
 
-> [!WARNING]  Info
+> [!WARNING]
 > Due to exams, I will be busy, so I will continue to make presets at a very slow pace.
 
 # About this Repo:
