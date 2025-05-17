@@ -58,15 +58,13 @@
 
 1. First of all, you should have the latest version of **termux** in your phone.
 2. Type these commands one by one **(first time only)**:
-    ```bash
-    apt update && apt upgrade
-    apt install wget nodejs cloudflared
-    mkdir janitor
-    cd janitor
-    wget https://raw.githubusercontent.com/ashuotaku/sillytavern/refs/heads/main/Scripts/JanitorAI/server.js
-    wget https://raw.githubusercontent.com/ashuotaku/sillytavern/refs/heads/main/Scripts/JanitorAI/package.json
-    npm i
-    ```
+    - `apt update && apt upgrade`
+    - `apt install wget nodejs cloudflared`
+    - `mkdir janitor`
+    - `cd janitor`
+    - `wget https://raw.githubusercontent.com/ashuotaku/sillytavern/refs/heads/main/Scripts/JanitorAI/server.js`
+    - `wget https://raw.githubusercontent.com/ashuotaku/sillytavern/refs/heads/main/Scripts/JanitorAI/package.json`
+    - `npm i`
 3. Starting the server **(you have to do this everytime, if you close and reopen the terminal)**:
     1. Type this command in termux: `node server.js`.
     2. Open another new session of termux (you can do this by sliding from left corner to open the termux menu and then click new session). 
