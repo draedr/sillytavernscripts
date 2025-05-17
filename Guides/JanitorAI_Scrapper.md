@@ -70,16 +70,13 @@
 3. Starting the server **(you have to do this everytime, if you close and reopen the terminal)**:
     1. Type this command in termux: `node server.js`.
     2. Open another new session of termux (you can do this by sliding from left corner to open the termux menu and then click new session). 
-
     ![image](../Images/janitorAI/termux_new.jpg)    
     3. Type this in the new session terminal: `cloudflared tunnel --url http://localhost:3000`
     4. Wait for few seconds and you will get a url something like this.
-
     ![image](../Images/janitorAI/cloudflared_termux.jpg)
     5. Copy the url that is ending with "trycloudflare.com".
     6. Open janitor ai and setup like this, same step as in computer, refer to the 3rd heading: [Setup in Janitor AI](#3-setup-in-janitor-ai).
     7. After sending message, open the 1st terminal and if you see green texts like this, then it means you are successful.
-
     ![image](../Images/janitorAI/green-text.jpg)
     8. Create another session of termux.
         1. Type these:
@@ -88,11 +85,9 @@
             ls
             ```
         2. You will see at least two files with name like this: request_{{char}}.log
-
         ![image](../Images/janitorAI/files-termux.jpg)
         3. Now type this command: `cat request_{{char}}.log` replace {{char}} with the name of character showing in your terminal, like in my case it is `cat request_eri.log`.
         4. The response will be like this:
-
         ![image](../Images/janitorAI/termux-response.jpg|width=100)
         5. Everything inside the XML tag with the character name `{{char}}`, like in my case it is `<Eri>` will be the character description, everything inside `<scenario>` will be the scenario, everything inside `<example_dialogs>` will be the example chats and everything inside the `<firstmessage>` will be the first message of the character card.
         6. You can copy paste this data in your SillyTavern in the respective field and for image you can download it from the page of the character of janitor ai.
