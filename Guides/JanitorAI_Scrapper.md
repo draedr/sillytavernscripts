@@ -56,7 +56,7 @@
 
 ## For Android (using termux):
 
-1. First of all, you should have the latest version of **termux** in your phone.
+1. First of all, you should have the latest version of **termux** (f-droid version) in your phone.
 2. Type these commands one by one **(first time only)**:
     - `apt update && apt upgrade`
     - `apt install wget nodejs cloudflared`
